@@ -40,17 +40,22 @@ jobs:
 
       - name: Generate or Update Graph
         run: |
-          set -e
+          set -euo pipefail
 
-          if [ -d "graphify-out" ]; then
+          if [ -f "graphify-out/graph.json" ]; then
             echo "Updating existing graph..."
-            graphify . --update --code-only
+            graphify extract . --update --code-only
           else
             echo "Creating new graph..."
-            graphify . --code-only
+            graphify extract . --code-only
           fi
 
-          # Ensure interactive HTML viewer is present for the Activity UI.
+          if [ ! -f "graphify-out/graph.json" ]; then
+            echo "::error::Graphify produced no graph.json. The repo likely has no supported source files (only README/docs). Add code and re-run Create/Refresh Graph."
+            exit 1
+          fi
+
+          # Interactive HTML viewer for the PR Pilot UI (best-effort).
           graphify export html || true
 
       - name: Commit updated graph
